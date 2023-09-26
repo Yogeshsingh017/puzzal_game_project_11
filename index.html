@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css">
+    
+<body>
+    <div id="puzzle"></div>
+  
+</body>
+<script>
+    const img_url = "https://tse4.mm.bing.net/th?id=OIP.JFwxTjgk3-7vbJyNX6T1ewHaEC&pid=Api&P=0&h=180";
+
+
+
+alert("Click a piece that is next to the gap to move it.\n\nIf you want a different image, change the URL in JS line 1.");
+window.onload = next_level;
+var side_length = 2;
+var number_of_pieces, empty_coordinates, piece_size, pieces;
+const piece_coordinates = [], original_coordinates = [];
+function next_level() {
+    side_length++;
+    number_of_pieces = side_length**2-1;
+    empty_coordinates = [side_length-1, side_length-1];
+    piece_size = 100/side_length;
+    let html = "<img id=\"full_img\" src=\""+img_url+"\">";
+    for(let i=0; i<number_of_pieces; i++) {
+        piece_coordinates[i] = [i % side_length, Math.floor(i/side_length)];
+        original_coordinates[i] = [...piece_coordinates[i]];
+        let clipArr = [0, 0, 1, 0, 1, 1, 0, 1];
+        let clipStr = "";
+        for(let j=0; j<8; j++)
+            clipStr += (clipArr[j] + piece_coordinates[i][j%2]) * piece_size + "%" + (j%2==1 && j<7 ? ", ":" ");
+        html += "<img class=\"piece\" src=\""+img_url+"\" style=\"clip-path:polygon("+clipStr+"); left:"+piece_coordinates[i][0]*piece_size+"%; top:"+piece_coordinates[i][1]*piece_size+"%; transform:translate3d(-"+piece_coordinates[i][0]*piece_size+"%, -"+piece_coordinates[i][1]*piece_size+"%, 0)\">";
+    }
+    puzzle.innerHTML = html;
+    pieces = document.getElementsByClassName("piece");
+    for(let i=0; i<number_of_pieces; i++) {
+        pieces[i].addEventListener("click", function(){
+            move_piece(i);
+        });
+    }
+    shuffle();
+}
+function move_piece(i, check_if_solved=true) {
+    let x = empty_coordinates[0] - piece_coordinates[i][0];
+    let y = empty_coordinates[1] - piece_coordinates[i][1];
+    if(Math.abs(x) + Math.abs(y) != 1)
+        return false;
+    empty_coordinates = [...piece_coordinates[i]];
+    piece_coordinates[i][0] += x;
+    piece_coordinates[i][1] += y;
+    pieces[i].style.left = piece_coordinates[i][0] * piece_size + "%";
+    pieces[i].style.top = piece_coordinates[i][1] * piece_size + "%";
+    if(check_if_solved) {
+        let solved = true;
+        loop: for(let j=0; j<number_of_pieces; j++) {
+            for(let k=0; k<2; k++) {
+                if(piece_coordinates[j][k] != original_coordinates[j][k]) {
+                    solved = false;
+                    break loop;
+                }
+            }
+        }
+        if(solved) {
+            setTimeout(function(){
+                full_img.style.opacity = 1;
+            }, 500);
+            setTimeout(function(){
+                if(confirm(("Well done!\nPlay next level?")))
+                    next_level();
+            }, 1000);
+        } else
+            full_img.style.opacity = 0;
+    }
+    return true;
+}
+function shuffle(repetitions = side_length**3, interval = 1000/repetitions, lastmoved) {
+    let piece;
+    for(;;) {
+        piece = Math.floor(Math.random()*number_of_pieces);
+        if(piece == lastmoved)
+            continue;
+        if(move_piece(piece, false))
+            break;
+    }
+    if(--repetitions > 0) {
+        setTimeout(function(){
+            shuffle(repetitions, interval, piece)
+        }, interval);
+    }
+}
+</script>
+</html>
